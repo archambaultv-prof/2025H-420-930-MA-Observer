@@ -1,12 +1,30 @@
 import datetime
+from abc import ABC, abstractmethod
+
+class Observateur(ABC):
+   
+    @abstractmethod
+    def mise_a_jour(self, post: dict):
+        pass
 
 class Blog:
     def __init__(self):
         self.posts = []
-        # Liste codée en dur d’administrateurs
-        self.admins = ['admin1@example.com', 'admin2@example.com']
-        # Liste codée en dur d’abonnés
-        self.subscribers = ['reader1@example.com', 'reader2@example.com']
+        self.observateurs = []
+
+    def attacher(self,observateur:Observateur):
+        if observateur not in self.observateurs:
+            self.observateurs.append(observateur)
+
+    def detacher(self,observateur:Observateur):
+        if observateur in self.observateurs:
+            self.observateurs.remove(observateur)
+    
+    def notifier(self, post: dict):
+        for observateur in self.observateurs:
+            observateur.mise_a_jour(post)
+
+
 
     def new_post(self, title: str, content: str):
         """
