@@ -1,60 +1,71 @@
 import datetime
+from abc import ABC, abstractmethod
 
+# Interface abstraite pour les observateurs
+class Observateur(ABC):
+    @abstractmethod
+    def mise_a_jour(self, sujet):
+        pass
+
+# Blog ne sait plus QUI fait quoi ; il diffuse juste l’événement
 class Blog:
     def __init__(self):
         self.posts = []
-        # Liste codée en dur d’administrateurs
-        self.admins = ['admin1@example.com', 'admin2@example.com']
-        # Liste codée en dur d’abonnés
-        self.subscribers = ['reader1@example.com', 'reader2@example.com']
+        self._observateurs = []
+    #remplace les listes fixes par attacher/detacher qui permettent d’ajouter ou retirer n’importe quel observateur
+    def attacher(self, observateur: Observateur):
+        self._observateurs.append(observateur)
+
+    def detacher(self, observateur: Observateur):
+        self._observateurs.remove(observateur)
+
+
+
+
+    def notifier(self, post):
+        for obs in self._observateurs:   # <-  déclenche chaque observateur
+            obs.mise_a_jour(post)
 
     def new_post(self, title: str, content: str):
-        """
-        Crée un nouvel article, l'enregistre et déclenche :
-         1. le log
-         2. la notification des admins
-         3. la notification des abonnés
-        """
         post = {
             'title': title,
             'content': content,
             'created_at': datetime.datetime.now()
         }
         self.posts.append(post)
+        self.notifier(post)       # <- plus de couplage direct
 
-        # 1) Log inline — couplage direct
-        self._log_post(post)
 
-        # 2) Notification admins inline — couplage direct
-        self._send_email_to_admins(post['title'])
+#====================================================================
+# Chaque classe  remplace une méthode privée de l’ancienne version :
+class LogObservateur(Observateur):
+    def mise_a_jour(self, post):
+        print('log', post['title'])
 
-        # 3) Notification abonnés inline — couplage direct
-        self._notify_subscribers(post['title'])
+class AdminObservateur(Observateur):
+    def __init__(self):
+        self.admins = ['admin1@example.com', 'admin2@example.com']
 
-    def _log_post(self, post: dict):
-        """
-        Journalisation basique : affiche date et titre.
-        """
-        timestamp = post['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-        print(f"[LOG] {timestamp} — Article créé : « {post['title']} »")
-
-    def _send_email_to_admins(self, post_title: str):
-        """
-        Envoi d'e-mails aux administrateurs.
-        """
+    def mise_a_jour(self, post):
         for admin in self.admins:
-            print(f"[E-MAIL ADMIN] À : {admin} — L’article « {post_title} » est publié.")
+            print('admin', admin, post['title'])
 
-    def _notify_subscribers(self, post_title: str):
-        """
-        Envoi d'e-mails aux abonnés.
-        """
+class SubscriberObservateur(Observateur):
+    def __init__(self):
+        self.subscribers = ['reader1@example.com', 'reader2@example.com']
+
+    def mise_a_jour(self, post):
         for subscriber in self.subscribers:
-            print(f"[E-MAIL ABONNÉ] À : {subscriber} — Nouvel article : « {post_title} » disponible !")
+            print('sub', subscriber, post['title'])
 
 def main():
     blog = Blog()
-    # Simulation de publications
+    
+    # Attacher les observateurs
+    blog.attacher(LogObservateur())
+    blog.attacher(AdminObservateur())
+    blog.attacher(SubscriberObservateur())
+    
     blog.new_post("Introduction à Python", "Bienvenue dans ce nouveau tutoriel sur Python.")
     blog.new_post("Les bases de l'OOP", "Aujourd'hui, on explore l'encapsulation, l'héritage et le polymorphisme.")
 
