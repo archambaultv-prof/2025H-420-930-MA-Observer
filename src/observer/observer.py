@@ -1,27 +1,30 @@
 import datetime
 from abc import ABC, abstractmethod
 
-class Observer(ABC):
+# Interface abstraite pour les observateurs
+class Observateur(ABC):
     @abstractmethod
-    def update(self, post: dict):
+    def mise_a_jour(self, sujet):
         pass
 
+# Blog ne sait plus QUI fait quoi ; il diffuse juste l’événement
 class Blog:
     def __init__(self):
         self.posts = []
-        # Liste codée en dur d’administrateurs
-        self.observers = []
+        self._observateurs = []
+    #remplace les listes fixes par attacher/detacher qui permettent d’ajouter ou retirer n’importe quel observateur
+    def attacher(self, observateur: Observateur):
+        self._observateurs.append(observateur)
 
-    def add_observer(self, observer: Observer):
-        self.observers.append(observer)
-
-    def remove_observer(self, observer: Observer):
-        self.observers.remove(observer)
+    def detacher(self, observateur: Observateur):
+        self._observateurs.remove(observateur)
 
 
-    def _notify_observers(self, post: dict):
-        for observer in self.observers:
-            observer.update(post)
+
+
+    def notifier(self, post):
+        for obs in self._observateurs:   # <-  déclenche chaque observateur
+            obs.mise_a_jour(post)
 
     def new_post(self, title: str, content: str):
         post = {
@@ -30,30 +33,41 @@ class Blog:
             'created_at': datetime.datetime.now()
         }
         self.posts.append(post)
-        self._notify_observers(post)
+        self.notifier(post)       # <- plus de couplage direct
 
 
-    class Logger(Observer):
-            pass
-    class AdminNotifier(Observer):
-        pass
-    
-    class SubscriberNotifier(Observer):
-        pass
+#====================================================================
+# Chaque classe  remplace une méthode privée de l’ancienne version :
+class LogObservateur(Observateur):
+    def mise_a_jour(self, post):
+        print('log', post['title'])
 
-   
+class AdminObservateur(Observateur):
+    def __init__(self):
+        self.admins = ['admin1@example.com', 'admin2@example.com']
+
+    def mise_a_jour(self, post):
+        for admin in self.admins:
+            print('admin', admin, post['title'])
+
+class SubscriberObservateur(Observateur):
+    def __init__(self):
+        self.subscribers = ['reader1@example.com', 'reader2@example.com']
+
+    def mise_a_jour(self, post):
+        for subscriber in self.subscribers:
+            print('sub', subscriber, post['title'])
 
 def main():
     blog = Blog()
-    # Ajouter les observateurs
-    blog.add_observer(Logger())
-    blog.add_observer(AdminNotifier())
-    blog.add_observer(SubscriberNotifier())
-
-    # Simulation de publications
+    
+    # Attacher les observateurs
+    blog.attacher(LogObservateur())
+    blog.attacher(AdminObservateur())
+    blog.attacher(SubscriberObservateur())
+    
     blog.new_post("Introduction à Python", "Bienvenue dans ce nouveau tutoriel sur Python.")
     blog.new_post("Les bases de l'OOP", "Aujourd'hui, on explore l'encapsulation, l'héritage et le polymorphisme.")
-
 
 if __name__ == "__main__":
     main()
