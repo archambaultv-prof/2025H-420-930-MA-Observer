@@ -1,12 +1,70 @@
 import datetime
+from abc import ABC, abstractmethod
 
-class Blog:
+class Observer(ABC):
+    @abstractmethod
+    def update(self, post: dict):
+        """
+        Méthode à implémenter par les observateurs pour recevoir des notifications.
+        """
+        pass
+
+
+
+
+
+class Admin(Observer):
+    def update(self, post: dict):
+        """
+        Implémentation de la méthode update pour les administrateurs.
+        Envoie un e-mail aux administrateurs à propos du nouvel article.
+        """
+        print(f"[E-MAIL ADMIN] À :")
+    
+    
+
+# When using an observer template, there is a subject, which is the object that changes.
+# Here, the class Blog acts as the subject.
+# Every time there is a change in the subject, it notifies its observers.
+# The observers are other portions of the program that need to know there was a change, so they are added to the list of observers within the subject.
+# Although there is only 1 subject here, we can still try and follow the SOLID principles for a better understanding of the application and the principles themselves
+
+
+class Notifier:
     def __init__(self):
-        self.posts = []
+        self._observers = list[Observer] = []
+
+    def attach_observer(self, observateur: Observer):
+        """
+        Attache un nouvel observateur.
+        """
+        self._observers.append(observateur)
+
+    def detach_observer(self, observateur: Observer):
+        """
+        Détache un observateur existant.
+        """
+        self._observers.remove(observateur)
+
+    def notify(self, title: str, content: str):
+        """
+        Notifie tous les observateurs d'un changement.
+        """
+        for observer in self._observers:
+            observer.update(title, content)
+
+
+class Blog(Notifier):
+    def __init__(self):
+        super().__init__()
+        self._posts = []
         # Liste codée en dur d’administrateurs
-        self.admins = ['admin1@example.com', 'admin2@example.com']
+        # self.admins = ['admin1@example.com', 'admin2@example.com']
         # Liste codée en dur d’abonnés
-        self.subscribers = ['reader1@example.com', 'reader2@example.com']
+        # self.subscribers = ['reader1@example.com', 'reader2@example.com']
+        
+        # Liste d'observateurs
+        self._observers = []
 
     def new_post(self, title: str, content: str):
         """
@@ -20,7 +78,7 @@ class Blog:
             'content': content,
             'created_at': datetime.datetime.now()
         }
-        self.posts.append(post)
+        self._posts.append(post)
 
         # 1) Log inline — couplage direct
         self._log_post(post)
@@ -42,14 +100,14 @@ class Blog:
         """
         Envoi d'e-mails aux administrateurs.
         """
-        for admin in self.admins:
+        for admin in self._admins:
             print(f"[E-MAIL ADMIN] À : {admin} — L’article « {post_title} » est publié.")
 
     def _notify_subscribers(self, post_title: str):
         """
         Envoi d'e-mails aux abonnés.
         """
-        for subscriber in self.subscribers:
+        for subscriber in self._subscribers:
             print(f"[E-MAIL ABONNÉ] À : {subscriber} — Nouvel article : « {post_title} » disponible !")
 
 def main():
