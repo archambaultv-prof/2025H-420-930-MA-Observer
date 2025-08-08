@@ -1,5 +1,28 @@
 import datetime
 
+# --- Les Observateurs ---
+class LoggerObserver:
+    def update(self, post):
+        timestamp = post['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        print(f"[LOG] {timestamp} — Article créé : « {post['title']} »")
+
+class AdminEmailObserver:
+    def __init__(self, admins):
+        self.admins = admins
+
+    def update(self, post):
+        for admin in self.admins:
+            print(f"[E-MAIL ADMIN] À : {admin} — L’article « {post['title']} » est publié.")
+
+class SubscriberEmailObserver:
+    def __init__(self, subscribers):
+        self.subscribers = subscribers
+
+    def update(self, post):
+        for subscriber in self.subscribers:
+            print(f"[E-MAIL ABONNÉ] À : {subscriber} — Nouvel article : « {post['title']} » disponible !")
+
+# --- Blog ---
 class Blog:
     def __init__(self):
         self.posts = []
@@ -8,6 +31,11 @@ class Blog:
         # Liste codée en dur d’abonnés
         self.subscribers = ['reader1@example.com', 'reader2@example.com']
 
+        # Création des observateurs
+        self.logger = LoggerObserver()
+        self.admin_notifier = AdminEmailObserver(self.admins)
+        self.subscriber_notifier = SubscriberEmailObserver(self.subscribers)
+
     def new_post(self, title: str, content: str):
         """
         Crée un nouvel article, l'enregistre et déclenche :
@@ -15,6 +43,7 @@ class Blog:
          2. la notification des admins
          3. la notification des abonnés
         """
+
         post = {
             'title': title,
             'content': content,
@@ -22,36 +51,12 @@ class Blog:
         }
         self.posts.append(post)
 
-        # 1) Log inline — couplage direct
-        self._log_post(post)
+        # Appels directs aux observateurs
+        self.logger.update(post)
+        self.admin_notifier.update(post)
+        self.subscriber_notifier.update(post)
 
-        # 2) Notification admins inline — couplage direct
-        self._send_email_to_admins(post['title'])
-
-        # 3) Notification abonnés inline — couplage direct
-        self._notify_subscribers(post['title'])
-
-    def _log_post(self, post: dict):
-        """
-        Journalisation basique : affiche date et titre.
-        """
-        timestamp = post['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-        print(f"[LOG] {timestamp} — Article créé : « {post['title']} »")
-
-    def _send_email_to_admins(self, post_title: str):
-        """
-        Envoi d'e-mails aux administrateurs.
-        """
-        for admin in self.admins:
-            print(f"[E-MAIL ADMIN] À : {admin} — L’article « {post_title} » est publié.")
-
-    def _notify_subscribers(self, post_title: str):
-        """
-        Envoi d'e-mails aux abonnés.
-        """
-        for subscriber in self.subscribers:
-            print(f"[E-MAIL ABONNÉ] À : {subscriber} — Nouvel article : « {post_title} » disponible !")
-
+# --- Main ---
 def main():
     blog = Blog()
     # Simulation de publications
