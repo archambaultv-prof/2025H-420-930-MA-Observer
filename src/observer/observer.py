@@ -10,6 +10,7 @@ class IObservateur(ABC):
 
     def __str__(self):
         print(self.email)
+        return self.email
 
     @abstractmethod
     def mettre_a_jour(self, title, email):
